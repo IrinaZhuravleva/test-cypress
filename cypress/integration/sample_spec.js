@@ -59,4 +59,31 @@ describe('Sending feedback form', () => {
             cy.get(".ajax-msg.assert.assert--error.error").should("include.text", "Необходимо заполнить поле с адресом электронной почты.");
         });
     });
+    
+    context('API request with the graphql query', () => {
+        it("Correct UI element rendering", () => {
+
+            //Step 1. Open the initial page.
+            cy.viewport("macbook-13");
+            cy.visit("https://www.producthunt.com/");
+
+            //Step 2. Send the graphql query and check the correct render of its result.
+            cy.request({
+                    url: 'https://www.producthunt.com/frontend/graphql',
+                    body: {
+                        "operationName": "HomepageSidebarQuery",
+                        "variables": {},
+                        "query": "query HomepageSidebarQuery{upcomingPagesCard{...UpcomingPagesSidebarCardFragment __typename}jobs(first:4 order:FEATURED kind:INHOUSE){edges{node{...JobsSidebarCardFragment __typename}__typename}__typename}stories(first:3 order:NEWEST){edges{node{id ...StoriesSidebarCardFragment __typename}__typename}__typename}makerMainGroup{id hpSidebarDiscussions{id ...DiscussionSidebarCardItemFragment __typename}__typename}}fragment UpcomingPagesSidebarCardFragment on UpcomingPagesCard{upcomingPages{id slug name tagline subscriberCount ...UpcomingPageSubscribeButton ...UpcomingPageThumbnail __typename}__typename}fragment UpcomingPageSubscribeButton on UpcomingPage{id isSubscribed __typename}fragment UpcomingPageThumbnail on UpcomingPage{id name logoUuid backgroundImageUuid thumbnailUuid __typename}fragment JobsSidebarCardFragment on Job{_id id companyName imageUuid url isFeatured jobTitle locations __typename}fragment StoriesSidebarCardFragment on AnthologiesStory{id slug title headerImageUuid minsToRead __typename}fragment DiscussionSidebarCardItemFragment on DiscussionThread{_id id title commentsCount votesCount hasVoted slug featuredAt user{_id id name avatarUrl ...UserImage __typename}__typename}fragment UserImage on User{_id id name username avatarUrl headline isViewer badgesCount ...KarmaBadge __typename}fragment KarmaBadge on User{karmaBadge{kind score __typename}__typename}"
+                    }
+                })
+                .its('body')
+                .then((body) => {
+                    const jobsFromApi = body.data.jobs.edges;
+
+                    cy
+                        .get('.style_sidebarWithSeparator___M3Mc a[href*="job_by_homepage"]')
+                        .should('have.length', jobsFromApi.length)
+                })
+        });
+    })
 });
